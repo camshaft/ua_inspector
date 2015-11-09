@@ -20,23 +20,17 @@ defmodule UAInspector.Database.Devices do
     { "regular", "devices.mobiles.yml",               "#{ @source_base_url }/mobiles.yml" }
   ]
 
-  @ets_counter :devices
-  @ets_table   :ua_inspector_database_devices
-
   def store_entry({ brand, data }, type) do
-    counter = UAInspector.Databases.update_counter(@ets_counter)
     data    = Enum.into(data, %{})
     models  = parse_models(data)
 
-    entry = %{
+    %{
       brand:  brand,
       models: models,
       device: data["device"],
       regex:  Util.build_regex(data["regex"]),
       type:   type
     }
-
-    :ets.insert_new(@ets_table, { counter, entry })
   end
 
   defp parse_models(data) do

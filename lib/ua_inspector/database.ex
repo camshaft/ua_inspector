@@ -14,30 +14,34 @@ defmodule UAInspector.Database do
   defmacro __before_compile__(_env) do
     quote do
       def init() do
-        :ets.new(@ets_table, [ :ordered_set, :protected, :named_table ])
+        :ok
       end
 
-      def list,    do: :ets.tab2list(@ets_table)
+      def list,    do: __MODULE__.DB.list()
       def sources, do: @sources
 
       def load(path) do
-        for { type, local, _remote } <- @sources do
+        @sources
+        |> Enum.flat_map(fn({type, local, _remote}) ->
           database = Path.join(path, local)
 
           if File.regular?(database) do
             database
             |> unquote(__MODULE__).load_database()
-            |> parse_database(type)
+            |> parse_database(type, [])
+          else
+            []
           end
-        end
+        end)
+        |> UAInspector.Database.compile(__ENV__)
 
         :ok
       end
 
-      def parse_database([],                  _type), do: :ok
-      def parse_database([ entry | database ], type)  do
-        store_entry(entry, type)
-        parse_database(database, type)
+      def parse_database([],                  _type, acc), do: :lists.reverse(acc)
+      def parse_database([ entry | database ], type, acc)  do
+        entry = store_entry(entry, type)
+        parse_database(database, type, [entry | acc])
       end
     end
   end
@@ -60,7 +64,7 @@ defmodule UAInspector.Database do
   @doc """
   Traverses the database and passes each entry to the storage function.
   """
-  @callback parse_database(entries :: list, type :: String.t) :: :ok
+  @callback parse_database(entries :: list, type :: String.t, []) :: :ok
 
   @doc """
   Returns the database sources.
@@ -85,5 +89,38 @@ defmodule UAInspector.Database do
     |> to_char_list()
     |> :yamerl_constr.file([ :str_node_as_binary ])
     |> hd()
+  end
+
+  def compile(entries, env) do
+    filename = env.file |> to_char_list()
+    module = Module.concat(env.module, DB)
+    entries
+    |> to_forms(module)
+    |> to_beam(filename)
+    |> load_beam(filename)
+  end
+
+  defp to_forms(entries, mod) do
+    [
+      {:attribute, 1, :module, mod},
+      {:attribute, 2, :export, [list: 0]},
+      {:function, 3, :list, 0, [
+        {:clause, 3, [], [], [:erl_parse.abstract(entries)]}
+      ]}
+    ]
+  end
+
+  defp to_beam(forms, filename) do
+    forms
+    |> :compile.forms([
+      :binary,
+      :report_errors,
+      {:source, filename},
+      :no_error_module_mismatch
+    ])
+  end
+
+  defp load_beam({:ok, mod, bin}, filename) do
+    {:module, ^mod} = :code.load_binary(mod, filename, bin)
   end
 end

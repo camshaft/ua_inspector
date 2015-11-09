@@ -14,6 +14,6 @@ defmodule UAInspector.ShortCodeMap.OSs do
   @ets_table :ua_inspector_short_code_map_oss
 
   def store_entry([{ short, long }]) do
-    :ets.insert_new(@ets_table, { short, long })
+    { short, long }
   end
 end

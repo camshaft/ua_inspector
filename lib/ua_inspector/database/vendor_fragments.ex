@@ -14,14 +14,11 @@ defmodule UAInspector.Database.VendorFragments do
   @ets_table   :ua_inspector_database_vendor_fragments
 
   def store_entry({ brand, regexes }, _type) do
-    counter = UAInspector.Databases.update_counter(@ets_counter)
     regexes = regexes |> Enum.map( &Util.build_regex/1 )
 
-    entry = %{
+    %{
       brand:   brand,
       regexes: regexes
     }
-
-    :ets.insert_new(@ets_table, { counter, entry })
   end
 end

@@ -14,10 +14,9 @@ defmodule UAInspector.ShortCodeMap do
   defmacro __before_compile__(_env) do
     quote do
       def init() do
-        :ets.new(@ets_table, [ :set, :protected, :named_table ])
       end
 
-      def list,   do: :ets.tab2list(@ets_table)
+      def list,    do: __MODULE__.DB.list()
       def local,  do: @file_local
       def remote, do: @file_remote
       def var,    do: @file_var
@@ -28,16 +27,19 @@ defmodule UAInspector.ShortCodeMap do
         if File.regular?(map) do
           map
           |> unquote(__MODULE__).load_map()
-          |> parse_map()
+          |> parse_map([])
+        else
+          []
         end
+        |> UAInspector.Database.compile(__ENV__)
 
         :ok
       end
 
-      def parse_map([]),              do: :ok
-      def parse_map([ entry | map ])  do
-        store_entry(entry)
-        parse_map(map)
+      def parse_map([], acc),              do: Enum.reverse(acc)
+      def parse_map([ entry | map ], acc)  do
+        entry = store_entry(entry)
+        parse_map(map, [entry | acc])
       end
 
       def to_long(short) do

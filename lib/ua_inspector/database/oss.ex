@@ -14,15 +14,12 @@ defmodule UAInspector.Database.OSs do
   @ets_table   :ua_inspector_database_oss
 
   def store_entry(data, _type) do
-    counter = UAInspector.Databases.update_counter(@ets_counter)
     data    = Enum.into(data, %{})
 
-    entry = %{
+    %{
       name:    data["name"],
       regex:   Util.build_regex(data["regex"]),
       version: data["version"]
     }
-
-    :ets.insert_new(@ets_table, { counter, entry })
   end
 end

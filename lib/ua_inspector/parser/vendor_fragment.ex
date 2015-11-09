@@ -11,7 +11,7 @@ defmodule UAInspector.Parser.VendorFragment do
 
 
   defp parse(_,  []),                             do: :unknown
-  defp parse(ua, [{ _index, entry } | database ]) do
+  defp parse(ua, [ entry | database ]) do
     if parse_brand(ua, entry.regexes) do
       entry.brand
     else

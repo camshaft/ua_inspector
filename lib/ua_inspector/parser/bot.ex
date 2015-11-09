@@ -27,7 +27,7 @@ defmodule UAInspector.Parser.Bot do
   end
 
   defp parse(_,  []),                             do: :unknown
-  defp parse(ua, [{ _index, entry } | database ]) do
+  defp parse(ua, [entry | database ]) do
     if Regex.match?(entry.regex, ua) do
       entry |> assemble_result(ua)
     else

@@ -20,21 +20,15 @@ defmodule UAInspector.Database.Clients do
     { "library",     "clients.libraries.yml",    "#{ @source_base_url }/libraries.yml" }
   ]
 
-  @ets_counter :clients
-  @ets_table   :ua_inspector_database_clients
-
   def store_entry(data, type) do
-    counter = UAInspector.Databases.update_counter(@ets_counter)
     data    = Enum.into(data, %{})
 
-    entry = %{
+    %{
       engine:  data["engine"],
       name:    data["name"],
       regex:   Util.build_regex(data["regex"]),
       type:    type,
       version: data["version"] |> to_string()
     }
-
-    :ets.insert_new(@ets_table, { counter, entry })
   end
 end
